@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario Banda</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        .navbar {
+            background-color: #343a40;
+            padding: 15px;
+            text-align: center;
+        }
+        .navbar button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .navbar button:hover {
+            background-color: #0056b3;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .view {
+            display: none;
+        }
+        .view.active {
+            display: block;
+        }
+        form label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        form input, form select, form textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn-primary {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin-top: 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+        .btn-primary:hover {
+            background-color: #218838;
+        }
+        .badge-total {
+            background-color: #007bff;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .filters-container {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            align-items: center;
+        }
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .instrument-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .instrument-card {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s;
+        }
+        .instrument-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .instrument-card h3 {
+            margin-top: 0;
+            font-size: 1.2em;
+            color: #007bff;
+            border-bottom: 2px solid #f1f1f1;
+            padding-bottom: 8px;
+        }
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .card-actions button {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+        }
+        .btn-info { background-color: #17a2b8; }
+        .btn-info:hover { background-color: #138496; }
+        .btn-warning { background-color: #ffc107; color: #212529 !important; }
+        .btn-warning:hover { background-color: #e0a800; }
+
+        .filter-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .btn-instrument-filter {
+            background-color: #f8f9fa;
+            border: 2px solid #007bff;
+            color: #007bff;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .btn-instrument-filter:hover {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-instrument-filter span {
+            display: block;
+            font-size: 0.9em;
+            margin-top: 5px;
+            opacity: 0.8;
+        }
+
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+        }
+        .close:hover { color: #000; }
+    </style>
+</head>
+<body>
+
+    <!-- Barra de Navegación Principal -->
+    <nav class="navbar">
+        <button onclick="cambiarVista('agregar')">➕ Agregar Instrumento</button>
+        <button onclick="cambiarVista('gestionar')">📋 Gestionar Instrumentos</button>
+    </nav>
+
+    <div class="container">
+        
+        <!-- VISTA 1: AGREGAR INSTRUMENTO -->
+        <div id="vistaAgregar" class="view active">
+            <h1>Agregar Nuevo Instrumento</h1>
+            <form id="instrumentForm">
+                <label for="nombre">Nombre del Instrumento / Código:</label>
+                <input type="text" id="nombre" required placeholder="Ej. Redoblante Principal #1">
+
+                <label for="tipo">Categoría (Tipo):</label>
+                <select id="tipo" required onchange="actualizarSubtiposAgregar()">
+                    <option value="percusion">Percusión</option>
+                    <option value="armonia">Armonía</option>
+                </select>
+
+                <label for="subtipo">Tipo de Instrumento:</label>
+                <select id="subtipo" required></select>
+
+                <label for="disponibilidad">Disponibilidad:</label>
+                <select id="disponibilidad" required onchange="actualizarDisponibilidad('agregar')">
+                    <option value="listo">Listo para usar</option>
+                    <option value="danado">Dañado</option>
+                </select>
+
+                <div id="divSubDisponibilidad">
+                    <label for="subDisponibilidad">Condición:</label>
+                    <select id="subDisponibilidad" onchange="toggleComentarioDisp('agregar')"></select>
+                </div>
+
+                <div id="divComentarioDisp" style="display:none;">
+                    <label for="comentarioDisp">Comentario (detalles):</label>
+                    <textarea id="comentarioDisp" rows="2"></textarea>
+                </div>
+
+                <label for="estado">Estado:</label>
+                <select id="estado" required onchange="actualizarEstado('agregar')">
+                    <option value="desocupado">Desocupado</option>
+                    <option value="ocupado">Ocupado</option>
+                </select>
+
+                <div id="divAsignacion" style="display:none;">
+                    <label for="nombreAlumno">Nombre del Alumno:</label>
+                    <input type="text" id="nombreAlumno">
+
+                    <label for="cargoAlumno">Cargo:</label>
+                    <select id="cargoAlumno">
+                        <option value="normal">Normal</option>
+                        <option value="lider">Líder</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-primary">Guardar en Firebase</button>
+            </form>
+        </div>
+
+        <!-- VISTA 2: GESTIONAR INSTRUMENTOS -->
+        <div id="vistaGestionar" class="view">
+            <h1>Gestionar Instrumentos</h1>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div class="badge-total">
+                    Total de instrumentos: <span id="contadorTotal">0</span>
+                </div>
+                <button onclick="cambiarVista('filtroEspecifico')" style="background-color: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                    🔍 Ver Conteo por Instrumento
+                </button>
+            </div>
+
+            <!-- Filtros Generales en Cascada -->
+            <div class="filters-container">
+                <div class="filter-group">
+                    <label for="filtroCategoria">Filtrar por Categoría:</label>
+                    <select id="filtroCategoria" onchange="actualizarFiltroSubtipos(); renderizarInventario();">
+                        <option value="todos">Todas las Categorías</option>
+                        <option value="percusion">Percusión</option>
+                        <option value="armonia">Armonía</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filtroSubtipo">Filtrar por Tipo de Instrumento:</label>
+                    <select id="filtroSubtipo" onchange="renderizarInventario()">
+                        <option value="todos">Todos los Tipos</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Contenedor en Cuadrícula -->
+            <div id="listaInstrumentos" class="instrument-grid">
+                <!-- Se cargan dinámicamente -->
+            </div>
+        </div>
+
+        <!-- VISTA 3: FILTRO ESPECÍFICO POR BOTONES -->
+        <div id="vistaFiltroEspecifico" class="view">
+            <h1>Filtro Específico por Instrumento</h1>
+            <p>Selecciona un instrumento para ver su cantidad total y filtrar directamente los registros:</p>
+            <div id="contenedorBotonesFiltro" class="filter-buttons-grid">
+                <!-- Se generan dinámicamente -->
+            </div>
+            <br>
+            <button onclick="cambiarVista('gestionar')" style="background-color: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                ⬅ Volver a Gestionar
+            </button>
+        </div>
+
+    </div>
+
+    <!-- MODAL PARA VER / EDITAR -->
+    <div id="modalDetalle" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" onclick="cerrarModal()">&times;</span>
+            <h2 id="modalTitulo">Detalles del Instrumento</h2>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- SCRIPT DE FIREBASE Y LÓGICA -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-analytics.js";
+        import { getFirestore, collection, addDoc, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDlwKdCfQKerAMqx1ujN-C1QK_f1Vy9YSc",
+            authDomain: "band-organized.firebaseapp.com",
+            projectId: "band-organized",
+            storageBucket: "band-organized.firebasestorage.app",
+            messagingSenderId: "695585220092",
+            appId: "1:695585220092:web:bed1f6641c15ca16f2be79",
+            measurementId: "G-ZE2R1RGX1C"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+
+        let inventarios = [];
+
+        const opcionesPorCategoria = {
+            percusion: ['Redoblante', 'Tarola', 'Bombo', 'Conga', 'Güiro', 'Cencerro', 'Platillo'],
+            armonia: ['Lira']
+        };
+
+        window.cambiarVista = function(vista) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            if(vista === 'agregar') document.getElementById('vistaAgregar').classList.add('active');
+            if(vista === 'gestionar') {
+                document.getElementById('vistaGestionar').classList.add('active');
+                cargarYRenderizarInventario();
+            }
+            if(vista === 'filtroEspecifico') {
+                document.getElementById('vistaFiltroEspecifico').classList.add('active');
+                renderizarBotonesFiltroEspecifico();
+            }
+        };
+
+        window.actualizarSubtiposAgregar = function() {
+            const tipo = document.getElementById('tipo').value;
+            const subtipo = document.getElementById('subtipo');
+            if(!subtipo) return;
+            subtipo.innerHTML = '';
+            const lista = opcionesPorCategoria[tipo] || [];
+            lista.forEach(item => {
+                let opt = document.createElement('option');
+                opt.value = item;
+                opt.innerHTML = item;
+                subtipo.appendChild(opt);
+            });
+        };
+
+        window.actualizarFiltroSubtipos = function() {
+            const categoria = document.getElementById('filtroCategoria').value;
+            const filtroSubtipo = document.getElementById('filtroSubtipo');
+            if(!filtroSubtipo) return;
+            filtroSubtipo.innerHTML = '<option value="todos">Todos los Tipos</option>';
+
+            let opcionesPermitidas = [];
+            if(categoria === 'todos') {
+                opcionesPermitidas = [...opcionesPorCategoria.percusion, ...opcionesPorCategoria.armonia];
+            } else {
+                opcionesPermitidas = opcionesPorCategoria[categoria] || [];
+            }
+
+            opcionesPermitidas.forEach(item => {
+                let opt = document.createElement('option');
+                opt.value = item;
+                opt.innerHTML = item;
+                filtroSubtipo.appendChild(opt);
+            });
+        };
+
+        window.actualizarDisponibilidad = function(prefijo = '') {
+            const dispId = prefijo === 'edit' ? 'editDisponibilidad' : 'disponibilidad';
+            const subDispId = prefijo === 'edit' ? 'editSubDisponibilidad' : 'subDisponibilidad';
+            
+            const dispEl = document.getElementById(dispId);
+            const subDispEl = document.getElementById(subDispId);
+            
+            if(!dispEl || !subDispEl) return;
+
+            const disp = dispEl.value;
+            subDispEl.innerHTML = '';
+
+            let opciones = (disp === 'listo') ? ['Nuevo', 'Viejo'] : ['Desarmado', 'Le faltan piezas'];
+            opciones.forEach(item => {
+                let opt = document.createElement('option');
+                opt.value = item;
+                opt.innerHTML = item;
+                subDispEl.appendChild(opt);
+            });
+            toggleComentarioDisp(prefijo);
+        };
+
+        window.toggleComentarioDisp = function(prefijo = '') {
+            const divC = document.getElementById(prefijo === 'edit' ? 'editDivComentarioDisp' : 'divComentarioDisp');
+            if(divC) divC.style.display = 'block';
+        };
+
+        window.actualizarEstado = function(prefijo = '') {
+            const estadoEl = document.getElementById(prefijo === 'edit' ? 'editEstado' : 'estado');
+            const divAsig = document.getElementById(prefijo === 'edit' ? 'editDivAsignacion' : 'divAsignacion');
+            if(!estadoEl || !divAsig) return;
+            divAsig.style.display = (estadoEl.value === 'ocupado') ? 'block' : 'none';
+        };
+
+        // Guardar nuevo en Firestore
+        document.getElementById('instrumentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const nuevo = {
+                nombre: document.getElementById('nombre').value,
+                tipo: document.getElementById('tipo').value,
+                subtipo: document.getElementById('subtipo').value,
+                disponibilidad: {
+                    condicion: document.getElementById('disponibilidad').value,
+                    subcondicion: document.getElementById('subDisponibilidad').value,
+                    comentario: document.getElementById('comentarioDisp').value
+                },
+                estado: {
+                    situacion: document.getElementById('estado').value,
+                    alumno: document.getElementById('nombreAlumno').value || 'Ninguno',
+                    cargo: document.getElementById('cargoAlumno').value || 'N/A'
+                }
+            };
+
+            try {
+                await addDoc(collection(db, "instrumentos"), nuevo);
+                alert('¡Instrumento guardado en Firebase con éxito!');
+                this.reset();
+                actualizarSubtiposAgregar();
+                actualizarDisponibilidad();
+                actualizarEstado();
+            } catch (error) {
+                console.error("Error al guardar: ", error);
+                alert("Hubo un error al guardar el instrumento.");
+            }
+        });
+
+        async function cargarYRenderizarInventario() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "instrumentos"));
+                inventarios = [];
+                querySnapshot.forEach((docSnap) => {
+                    inventarios.push({ id: docSnap.id, ...docSnap.data() });
+                });
+                renderizarInventario();
+            } catch (error) {
+                console.error("Error al cargar inventario: ", error);
+            }
+        }
+
+        window.renderizarInventario = function() {
+            const contenedor = document.getElementById('listaInstrumentos');
+            const filtroCategoria = document.getElementById('filtroCategoria').value;
+            const filtroSubtipo = document.getElementById('filtroSubtipo').value;
+            const contadorTotalEl = document.getElementById('contadorTotal');
+            
+            if(!contenedor) return;
+            contenedor.innerHTML = '';
+            contadorTotalEl.innerText = inventarios.length;
+
+            let filtrados = inventarios.filter(item => {
+                let pasaCategoria = (filtroCategoria === 'todos' || item.tipo === filtroCategoria);
+                let pasaSubtipo = (filtroSubtipo === 'todos' || item.subtipo === filtroSubtipo);
+                return pasaCategoria && pasaSubtipo;
+            });
+
+            if (filtrados.length === 0) {
+                contenedor.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #666;">No hay instrumentos registrados que coincidan con el filtro.</p>';
+                return;
+            }
+
+            filtrados.forEach(item => {
+                let card = document.createElement('div');
+                card.className = 'instrument-card';
+                card.innerHTML = `
+                    <div>
+                        <h3>${item.nombre}</h3>
+                        <p><strong>Categoría:</strong> ${item.tipo.toUpperCase()}</p>
+                        <p><strong>Tipo:</strong> ${item.subtipo}</p>
+                        <p><strong>Disponibilidad:</strong> ${item.disponibilidad.condicion} (${item.disponibilidad.subcondicion})</p>
+                        <p><strong>Estado:</strong> ${item.estado.situacion} <br><strong>Alumno:</strong> ${item.estado.alumno} (${item.estado.cargo})</p>
+                    </div>
+                    <div class="card-actions">
+                        <button onclick="verInstrumento('${item.id}')" class="btn-info">Ver</button>
+                        <button onclick="abrirEditar('${item.id}')" class="btn-warning">Editar</button>
+                    </div>
+                `;
+                contenedor.appendChild(card);
+            });
+        };
+
+        function renderizarBotonesFiltroEspecifico() {
+            const contenedor = document.getElementById('contenedorBotonesFiltro');
+            if(!contenedor) return;
+            contenedor.innerHTML = '';
+
+            const conteoSubtipos = {};
+            inventarios.forEach(item => {
+                const sub = item.subtipo || 'Otros';
+                conteoSubtipos[sub] = (conteoSubtipos[sub] || 0) + 1;
+            });
+
+            const subtiposUnicos = Object.keys(conteoSubtipos);
+
+            if (subtiposUnicos.length === 0) {
+                contenedor.innerHTML = '<p>No hay instrumentos registrados para generar filtros.</p>';
+                return;
+            }
+
+            subtiposUnicos.forEach(subtipo => {
+                let btn = document.createElement('button');
+                btn.className = 'btn-instrument-filter';
+                btn.innerHTML = `${subtipo}<span>Cantidad: ${conteoSubtipos[subtipo]}</span>`;
+                btn.onclick = function() {
+                    cambiarVista('gestionar');
+                    let categoriaEncontrada = 'todos';
+                    for (let cat in opcionesPorCategoria) {
+                        if (opcionesPorCategoria[cat].includes(subtipo)) {
+                            categoriaEncontrada = cat;
+                            break;
+                        }
+                    }
+                    document.getElementById('filtroCategoria').value = categoriaEncontrada;
+                    actualizarFiltroSubtipos();
+                    document.getElementById('filtroSubtipo').value = subtipo;
+                    renderizarInventario();
+                };
+                contenedor.appendChild(btn);
+            });
+        }
+
+        window.verInstrumento = function(id) {
+            const item = inventarios.find(i => i.id === id);
+            if(!item) return;
+            document.getElementById('modalTitulo').innerText = item.nombre;
+            document.getElementById('modalBody').innerHTML = `
+                <p><strong>Categoría Principal:</strong> ${item.tipo}</p>
+                <p><strong>Tipo de Instrumento:</strong> ${item.subtipo}</p>
+                <hr>
+                <p><strong>Condición:</strong> ${item.disponibilidad.condicion} - ${item.disponibilidad.subcondicion}</p>
+                <p><strong>Comentario:</strong> ${item.disponibilidad.comentario || 'Ninguno'}</p>
+                <hr>
+                <p><strong>Estado:</strong> ${item.estado.situacion}</p>
+                <p><strong>Alumno Asignado:</strong> ${item.estado.alumno}</p>
+                <p><strong>Cargo:</strong> ${item.estado.cargo}</p>
+            `;
+            document.getElementById('modalDetalle').style.display = 'flex';
+        };
+
+        window.abrirEditar = function(id) {
+            const item = inventarios.find(i => i.id === id);
+            if(!item) return;
+            document.getElementById('modalTitulo').innerText = `Editar: ${item.nombre}`;
+            document.getElementById('modalBody').innerHTML = `
+                <form id="editForm" onsubmit="guardarEdicion(event, '${id}')">
+                    <label>Disponibilidad:</label>
+                    <select id="editDisponibilidad" onchange="actualizarDisponibilidad('edit')">
+                        <option value="listo" ${item.disponibilidad.condicion === 'listo' ? 'selected' : ''}>Listo para usar</option>
+                        <option value="danado" ${item.disponibilidad.condicion === 'danado' ? 'selected' : ''}>Dañado</option>
+                    </select>
+
+                    <label>Condición:</label>
+                    <select id="editSubDisponibilidad"></select>
+
+                    <label>Comentario / Detalles:</label>
+                    <textarea id="editComentarioDisp" rows="2">${item.disponibilidad.comentario || ''}</textarea>
+
+                    <label>Estado:</label>
+                    <select id="editEstado" onchange="actualizarEstado('edit')">
+                        <option value="desocupado" ${item.estado.situacion === 'desocupado' ? 'selected' : ''}>Desocupado</option>
+                        <option value="ocupado" ${item.estado.situacion === 'ocupado' ? 'selected' : ''}>Ocupado</option>
+                    </select>
+
+                    <div id="editDivAsignacion" style="display:${item.estado.situacion === 'ocupado' ? 'block' : 'none'};">
+                        <label>Nombre del Alumno:</label>
+                        <input type="text" id="editNombreAlumno" value="${item.estado.alumno === 'Ninguno' ? '' : item.estado.alumno}">
+
+                        <label>Cargo:</label>
+                        <select id="editCargoAlumno">
+                            <option value="normal" ${item.estado.cargo === 'normal' ? 'selected' : ''}>Normal</option>
+                            <option value="lider" ${item.estado.cargo === 'lider' ? 'selected' : ''}>Líder</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="margin-top:15px;">Guardar Cambios</button>
+                </form>
+            `;
+            document.getElementById('modalDetalle').style.display = 'flex';
+            actualizarDisponibilidad('edit');
+            
+            setTimeout(() => {
+                const subDispSelect = document.getElementById('editSubDisponibilidad');
+                if(subDispSelect) {
+                    for(let i=0; i<subDispSelect.options.length; i++){
+                        if(subDispSelect.options[i].value === item.disponibilidad.subcondicion){
+                            subDispSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }, 50);
+        };
+
+        // Función independiente y limpia para manejar el guardado de edición sin recargas erróneas
+        window.guardarEdicion = async function(e, id) {
+            e.preventDefault();
+            
+            const docRef = doc(db, "instrumentos", id);
+            const datosActualizados = {
+                "disponibilidad.condicion": document.getElementById('editDisponibilidad').value,
+                "disponibilidad.subcondicion": document.getElementById('editSubDisponibilidad').value,
+                "disponibilidad.comentario": document.getElementById('editComentarioDisp').value,
+                "estado.situacion": document.getElementById('editEstado').value,
+                "estado.alumno": document.getElementById('editNombreAlumno').value || 'Ninguno',
+                "estado.cargo": document.getElementById('editCargoAlumno').value
+            };
+
+            try {
+                await updateDoc(docRef, datosActualizados);
+                alert('¡Instrumento actualizado en Firebase con éxito!');
+                cerrarModal();
+                await cargarYRenderizarInventario();
+            } catch (error) {
+                console.error("Error al actualizar: ", error);
+                alert("Error al actualizar el registro. Verifica tus permisos en Firebase.");
+            }
+        };
+
+        window.cerrarModal = function() {
+            document.getElementById('modalDetalle').style.display = 'none';
+        };
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            actualizarSubtiposAgregar();
+            actualizarDisponibilidad();
+            actualizarFiltroSubtipos();
+            try {
+                const querySnapshot = await getDocs(collection(db, "instrumentos"));
+                inventarios = [];
+                querySnapshot.forEach((docSnap) => {
+                    inventarios.push({ id: docSnap.id, ...docSnap.data() });
+                });
+            } catch (e) {
+                console.error("Carga inicial:", e);
+            }
+        });
+    </script>
+</body>
+</html>
